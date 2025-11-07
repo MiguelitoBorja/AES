@@ -1,0 +1,382 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>AES Cipher Studio - Cifrado Seguro Web</title>
+  <link rel="stylesheet" href="aes.css">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
+</head>
+<body>
+  <div class="container">
+    <header class="main-header">
+      <div class="header-content">
+        <div class="logo">
+          <i class="fas fa-shield-alt"></i>
+          <h1>AES Cipher Studio</h1>
+        </div>
+        <p class="subtitle">Cifrado AES-GCM seguro y fácil de usar en tu navegador</p>
+      </div>
+    </header>
+
+    <nav class="nav-tabs">
+      <button class="tab-btn active" data-tab="info"><i class="fas fa-info-circle"></i> Información</button>
+      <button class="tab-btn" data-tab="text"><i class="fas fa-edit"></i> Cifrar Texto</button>
+      <button class="tab-btn" data-tab="files"><i class="fas fa-file-image"></i> Cifrar Archivos</button>
+      <button class="tab-btn" data-tab="security"><i class="fas fa-bug"></i> Pruebas de Seguridad</button>
+    </nav>
+
+    <div class="tab-content active" id="info-tab">
+      <div class="card info-card">
+        <div class="card-header">
+          <h2><i class="fas fa-lock"></i> ¿Qué es AES?</h2>
+        </div>
+        <div class="card-body">
+          <p><strong>AES (Advanced Encryption Standard)</strong> es el estándar de cifrado más seguro y utilizado mundialmente.</p>
+          <div class="features-grid">
+            <div class="feature">
+              <i class="fas fa-key"></i>
+              <h3>Cifrado Simétrico</h3>
+              <p>Usa la misma clave para cifrar y descifrar datos</p>
+            </div>
+            <div class="feature">
+              <i class="fas fa-cubes"></i>
+              <h3>Cifrado por Bloques</h3>
+              <p>Divide los datos en bloques de 128 bits</p>
+            </div>
+            <div class="feature">
+              <i class="fas fa-shield-check"></i>
+              <h3>Modo GCM</h3>
+              <p>Garantiza autenticidad e integridad de los datos</p>
+            </div>
+          </div>
+          
+          <div class="mode-comparison">
+            <h3>🔐 Comparación de Modos de Cifrado</h3>
+            <div class="modes-grid">
+              <div class="mode-card safe">
+                <div class="mode-header">
+                  <i class="fas fa-shield-alt"></i>
+                  <h4>AES-GCM</h4>
+                  <span class="badge safe">SEGURO</span>
+                </div>
+                <ul>
+                  <li>✅ Cifrado autenticado</li>
+                  <li>✅ Detecta modificaciones</li>
+                  <li>✅ Resistente a ataques</li>
+                  <li>✅ Usado en TLS/HTTPS</li>
+                </ul>
+              </div>
+              
+              <div class="mode-card educational">
+                <div class="mode-header">
+                  <i class="fas fa-graduation-cap"></i>
+                  <h4>AES-CBC</h4>
+                  <span class="badge educational">EDUCATIVO</span>
+                </div>
+                <ul>
+                  <li>⚠️ Requiere IV único</li>
+                  <li>⚠️ Vulnerable a padding oracle</li>
+                  <li>⚠️ No detecta modificaciones</li>
+                  <li>📚 Útil para aprender</li>
+                </ul>
+              </div>
+              
+              <div class="mode-card dangerous">
+                <div class="mode-header">
+                  <i class="fas fa-exclamation-triangle"></i>
+                  <h4>AES-ECB</h4>
+                  <span class="badge dangerous">INSEGURO</span>
+                </div>
+                <ul>
+                  <li>❌ Patrones visibles</li>
+                  <li>❌ "Efecto Pingüino"</li>
+                  <li>❌ Bloques idénticos = cifrado idéntico</li>
+                  <li>🚫 NUNCA usar en producción</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-content" id="text-tab">
+      <div class="card">
+        <div class="card-header">
+          <h2><i class="fas fa-edit"></i> Cifrado de Texto</h2>
+        </div>
+        <div class="card-body">
+          <div class="text-section">
+            <div class="input-group">
+              <label for="textPlain"><i class="fas fa-file-alt"></i> Texto Plano</label>
+              <textarea id="textPlain" placeholder="Escribe tu mensaje secreto aquí..." rows="6"></textarea>
+            </div>
+            
+            <div class="password-section">
+              <div class="input-group">
+                <label for="pwdText"><i class="fas fa-key"></i> Contraseña</label>
+                <div class="password-input">
+                  <input id="pwdText" type="password" placeholder="Ingresa una contraseña segura" />
+                  <button type="button" class="toggle-password" data-target="pwdText">
+                    <i class="fas fa-eye"></i>
+                  </button>
+                </div>
+                <div class="password-strength">
+                  <div class="strength-bar">
+                    <div class="strength-fill"></div>
+                  </div>
+                  <span class="strength-text">Fuerza de contraseña</span>
+                </div>
+              </div>
+              
+              <div class="input-group">
+                <label for="textMode"><i class="fas fa-cogs"></i> Modo de Cifrado</label>
+                <select id="textMode" class="mode-select">
+                  <option value="GCM">AES-GCM (Recomendado - Seguro)</option>
+                  <option value="CBC">AES-CBC (Educativo)</option>
+                  <option value="ECB">AES-ECB (Inseguro - Solo demostración)</option>
+                </select>
+              </div>
+              
+              <div class="button-group">
+                <button id="btnEncryptText" class="btn btn-primary">
+                  <i class="fas fa-lock"></i> Cifrar
+                </button>
+                <button id="btnDecryptText" class="btn btn-secondary">
+                  <i class="fas fa-unlock"></i> Descifrar
+                </button>
+                <button id="btnCopyResult" class="btn btn-copy" style="display:none">
+                  <i class="fas fa-copy"></i> Copiar
+                </button>
+              </div>
+            </div>
+            
+            <div class="input-group">
+              <label for="textCipher"><i class="fas fa-code"></i> Texto Cifrado (Base64)</label>
+              <textarea id="textCipher" placeholder="El resultado cifrado aparecerá aquí..." rows="6"></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-content" id="files-tab">
+      <div class="card">
+        <div class="card-header">
+          <h2><i class="fas fa-file-image"></i> Cifrado de Archivos</h2>
+        </div>
+        <div class="card-body">
+          <div class="files-section">
+            <div class="encrypt-section">
+              <h3><i class="fas fa-upload"></i> Cifrar Archivo</h3>
+              <div class="file-drop-zone" id="encryptDropZone">
+                <i class="fas fa-cloud-upload-alt"></i>
+                <p>Arrastra un archivo aquí o haz clic para seleccionar</p>
+                <input id="fileEncrypt" type="file" style="display: none;" />
+              </div>
+              <div class="file-info" id="encryptFileInfo" style="display: none;"></div>
+              
+              <div class="input-group">
+                <label for="pwdEncrypt"><i class="fas fa-key"></i> Contraseña</label>
+                <div class="password-input">
+                  <input id="pwdEncrypt" type="password" placeholder="Contraseña para cifrar" />
+                  <button type="button" class="toggle-password" data-target="pwdEncrypt">
+                    <i class="fas fa-eye"></i>
+                  </button>
+                </div>
+              </div>
+              
+              <div class="input-group">
+                <label for="fileMode"><i class="fas fa-cogs"></i> Modo de Cifrado</label>
+                <select id="fileMode" class="mode-select">
+                  <option value="GCM">AES-GCM (Recomendado - Seguro)</option>
+                  <option value="CBC">AES-CBC (Educativo)</option>
+                  <option value="ECB">AES-ECB (Inseguro - Efecto Pingüino)</option>
+                </select>
+              </div>
+              
+              <button id="btnEncrypt" class="btn btn-primary full-width">
+                <i class="fas fa-lock"></i> Cifrar y Descargar
+              </button>
+            </div>
+            
+            <div class="decrypt-section">
+              <h3><i class="fas fa-download"></i> Descifrar Archivo</h3>
+              <div class="file-drop-zone" id="decryptDropZone">
+                <i class="fas fa-file-code"></i>
+                <p>Arrastra un archivo .aes aquí</p>
+                <input id="fileDecrypt" type="file" accept=".aes" style="display: none;" />
+              </div>
+              <div class="file-info" id="decryptFileInfo" style="display: none;"></div>
+              
+              <div class="input-group">
+                <label for="pwdDecrypt"><i class="fas fa-key"></i> Contraseña</label>
+                <div class="password-input">
+                  <input id="pwdDecrypt" type="password" placeholder="Contraseña para descifrar" />
+                  <button type="button" class="toggle-password" data-target="pwdDecrypt">
+                    <i class="fas fa-eye"></i>
+                  </button>
+                </div>
+              </div>
+              
+              <div class="input-group">
+                <label><i class="fas fa-info-circle"></i> Usar el mismo modo que para cifrar</label>
+              </div>
+              
+              <button id="btnDecrypt" class="btn btn-secondary full-width">
+                <i class="fas fa-unlock"></i> Descifrar
+              </button>
+              <div id="saveDownload"></div>
+            </div>
+          </div>
+          
+          <div class="preview-section">
+            <div class="preview-container">
+              <h4>Vista Previa - Original</h4>
+              <div id="previewAreaOriginal" class="preview-area"></div>
+            </div>
+            <div class="preview-container">
+              <h4>Vista Previa - Descifrado</h4>
+              <div id="previewAreaDecrypted" class="preview-area"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-content" id="security-tab">
+      <div class="card">
+        <div class="card-header">
+          <h2><i class="fas fa-bug"></i> Pruebas de Seguridad</h2>
+        </div>
+        <div class="card-body">
+          <div class="security-tests">
+            <div class="test-section">
+              <h3><i class="fas fa-exclamation-triangle"></i> Prueba 1: Contraseña Incorrecta</h3>
+              <p>Intenta descifrar texto o archivos con una contraseña incorrecta. El sistema detectará el error y no mostrará datos basura.</p>
+              <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i>
+                <strong>Tip:</strong> Prueba cifrar algo y luego descifrarlo con una contraseña diferente.
+              </div>
+            </div>
+            
+            <div class="test-section">
+              <h3><i class="fas fa-clock"></i> Prueba 2: Costo Computacional (PBKDF2)</h3>
+              <p>Las contraseñas se procesan usando PBKDF2 con <strong>200,000 iteraciones</strong> para hacer los ataques de fuerza bruta extremadamente lentos.</p>
+              <button id="btnIterationsTest" class="btn btn-warning">
+                <i class="fas fa-stopwatch"></i> Probar Derivación de Clave
+              </button>
+              <div id="iterationResults" class="test-results" style="display: none;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="status-section">
+      <div class="card">
+        <div class="card-header">
+          <h2><i class="fas fa-terminal"></i> Estado del Sistema</h2>
+        </div>
+        <div class="card-body">
+          <div id="log" class="log-container">
+            <div class="log-entry">
+              <i class="fas fa-info-circle"></i>
+              <span>Sistema listo. Selecciona una operación para comenzar.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sección de Demostración Visual del "Efecto Pingüino" -->
+    <section class="visual-demo-section">
+      <div class="demo-header">
+        <h2><i class="fas fa-eye"></i> Demostración Visual: "Efecto Pingüino"</h2>
+        <p>Compara la diferencia visual entre cifrado seguro (GCM/CBC) e inseguro (ECB) en imágenes</p>
+      </div>
+
+      <div class="demo-controls">
+        <div class="control-group">
+          <label for="demoImageInput"><i class="fas fa-image"></i> Seleccionar Imagen</label>
+          <input type="file" id="demoImageInput" accept="image/*" />
+        </div>
+        <div class="control-group">
+          <label for="demoPassword"><i class="fas fa-key"></i> Contraseña</label>
+          <input type="password" id="demoPassword" value="demo123" placeholder="Contraseña para demo" />
+        </div>
+        <button id="runVisualDemo" class="demo-button">
+          <i class="fas fa-play"></i> Ejecutar Demostración
+        </button>
+      </div>
+
+      <div id="demoStatus" class="demo-status"></div>
+
+      <div class="canvas-container">
+        <div class="canvas-card">
+          <h3><i class="fas fa-image"></i> Imagen Original</h3>
+          <canvas id="canvasOriginal"></canvas>
+          <p>Tu imagen tal como se ve normalmente</p>
+        </div>
+        
+        <div class="canvas-card danger">
+          <h3><i class="fas fa-exclamation-triangle"></i> ECB (Inseguro)</h3>
+          <canvas id="canvasECB"></canvas>
+          <p>¡Se puede ver la silueta! Patrones repetitivos son visibles</p>
+        </div>
+        
+        <div class="canvas-card safe">
+          <h3><i class="fas fa-shield-alt"></i> GCM (Seguro)</h3>
+          <canvas id="canvasGCM"></canvas>
+          <p>Ruido total - imposible distinguir la imagen original</p>
+        </div>
+      </div>
+
+      <div class="demo-explanation">
+        <h3><i class="fas fa-info-circle"></i> ¿Por qué sucede esto?</h3>
+        <div class="explanation-grid">
+          <div class="explanation-card">
+            <h4><i class="fas fa-times-circle"></i> ECB (Electronic Code Book)</h4>
+            <ul>
+              <li>Cifra cada bloque de 16 bytes por separado</li>
+              <li>Bloques idénticos → cifrado idéntico</li>
+              <li>Preserva patrones visuales</li>
+              <li><strong>¡Nunca uses ECB para imágenes!</strong></li>
+            </ul>
+          </div>
+          <div class="explanation-card">
+            <h4><i class="fas fa-check-circle"></i> GCM/CBC (Modos Seguros)</h4>
+            <ul>
+              <li>Usa vectores de inicialización (IV)</li>
+              <li>Cada bloque depende del anterior</li>
+              <li>Bloques idénticos → cifrado diferente</li>
+              <li><strong>Resultado: ruido completamente aleatorio</strong></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer class="main-footer">
+      <p><i class="fas fa-shield-alt"></i> Cifrado AES-GCM con 256 bits de seguridad</p>
+      <p>Todos los procesos se ejecutan localmente en tu navegador</p>
+    </footer>
+  </div>
+
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-spinner">
+      <i class="fas fa-sync-alt fa-spin"></i>
+      <p>Procesando...</p>
+    </div>
+  </div>
+
+
+
+
+
+
+<script src="aes.js"></script>
+</body>
+</html>
