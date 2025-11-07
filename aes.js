@@ -232,17 +232,37 @@ function initPasswordToggles() {
   const toggles = document.querySelectorAll('.toggle-password');
   
   toggles.forEach(toggle => {
-    toggle.addEventListener('click', () => {
+    toggle.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      
       const targetId = toggle.dataset.target;
       const input = document.getElementById(targetId);
       const icon = toggle.querySelector('i');
       
+      if (!input) return;
+      
+      // Guardar el valor y posición del cursor
+      const currentValue = input.value;
+      const cursorPosition = input.selectionStart;
+      
       if (input.type === 'password') {
         input.type = 'text';
         icon.className = 'fas fa-eye-slash';
+        toggle.setAttribute('title', 'Ocultar contraseña');
       } else {
         input.type = 'password';
         icon.className = 'fas fa-eye';
+        toggle.setAttribute('title', 'Mostrar contraseña');
+      }
+      
+      // Restaurar el valor y posición del cursor
+      input.value = currentValue;
+      input.setSelectionRange(cursorPosition, cursorPosition);
+      
+      // Forzar que mantenga el foco si lo tenía
+      if (document.activeElement === input) {
+        input.focus();
       }
     });
   });

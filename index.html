@@ -873,7 +873,12 @@
         </div>
         <div class="control-group">
           <label for="demoPassword"><i class="fas fa-key"></i> Contraseña</label>
-          <input type="password" id="demoPassword" value="demo123" placeholder="Contraseña para demo" />
+          <div class="password-input">
+            <input type="password" id="demoPassword" value="demo123" placeholder="Contraseña para demo" />
+            <button type="button" class="toggle-password" data-target="demoPassword" title="Mostrar contraseña">
+              <i class="fas fa-eye"></i>
+            </button>
+          </div>
         </div>
         <button id="runVisualDemo" class="demo-button">
           <i class="fas fa-play"></i> Ejecutar Demostración
