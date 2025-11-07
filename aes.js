@@ -589,15 +589,90 @@ async function handleEncryptText() {
     showLoading(`Cifrando texto con AES-${mode}...`);
     log(`Iniciando cifrado de texto con modo ${mode}...`);
     
-    const enc = new TextEncoder();
-    const dataBuf = enc.encode(plainText);
-    const encBuf = await encryptArrayBuffer(dataBuf, pwd, mode);
-    const base64Result = bufToBase64(encBuf);
+    // Mostrar la sección de proceso detallado
+    showEncryptionProcess();
     
+    // Paso 1: Generar salt
+    animateStep(1);
+    const salt = crypto.getRandomValues(new Uint8Array(SALT_LEN));
+    updateStep1(salt);
+    await new Promise(resolve => setTimeout(resolve, 800));
+    
+    // Paso 2: Derivar clave
+    animateStep(2);
+    const enc = new TextEncoder();
+    const passKey = await crypto.subtle.importKey('raw', enc.encode(pwd), 'PBKDF2', false, ['deriveKey']);
+    
+    let derivedKey;
+    if (mode === 'ECB') {
+      // Para ECB, no usamos Web Crypto API sino CryptoJS
+      updateStep2(pwd, salt, null);
+    } else {
+      const algorithm = mode === 'CBC' ? 'AES-CBC' : 'AES-GCM';
+      derivedKey = await crypto.subtle.deriveKey(
+        { name: 'PBKDF2', salt: salt, iterations: 200000, hash: 'SHA-256' },
+        passKey,
+        { name: algorithm, length: 256 },
+        true, // Permitir exportación para mostrar
+        ['encrypt']
+      );
+      updateStep2(pwd, salt, derivedKey);
+    }
+    await new Promise(resolve => setTimeout(resolve, 800));
+    
+    // Paso 3: Generar IV (si aplica)
+    animateStep(3);
+    let iv;
+    if (mode === 'GCM') {
+      iv = crypto.getRandomValues(new Uint8Array(IV_LEN));
+      updateStep3(iv, mode);
+    } else if (mode === 'CBC') {
+      iv = crypto.getRandomValues(new Uint8Array(16));
+      updateStep3(iv, mode);
+    } else {
+      // ECB no usa IV
+      updateStep3(new Uint8Array(), mode);
+    }
+    await new Promise(resolve => setTimeout(resolve, 800));
+    
+    // Paso 4: Cifrar
+    animateStep(4);
+    const dataBuf = enc.encode(plainText);
+    let cipher;
+    
+    if (mode === 'ECB') {
+      const paddedData = addPKCS7Padding(dataBuf);
+      cipher = await encryptECB(paddedData, pwd, salt.buffer);
+    } else if (mode === 'CBC') {
+      const paddedData = addPKCS7Padding(dataBuf);
+      cipher = await crypto.subtle.encrypt({name:'AES-CBC', iv: iv}, derivedKey, paddedData);
+    } else {
+      cipher = await crypto.subtle.encrypt({name:'AES-GCM', iv: iv}, derivedKey, dataBuf);
+    }
+    
+    const cipherBytes = new Uint8Array(cipher);
+    updateStep4(plainText, mode, cipherBytes);
+    await new Promise(resolve => setTimeout(resolve, 800));
+    
+    // Paso 5: Formato final
+    animateStep(5);
+    let encBuf;
+    if (mode === 'ECB') {
+      encBuf = concatUint8Arrays(salt.buffer, cipher);
+    } else if (mode === 'CBC') {
+      encBuf = concatUint8Arrays(salt.buffer, iv.buffer, cipher);
+    } else {
+      encBuf = concatUint8Arrays(salt.buffer, iv.buffer, cipher);
+    }
+    
+    const base64Result = bufToBase64(encBuf);
+    updateStep5(base64Result, mode, encBuf.byteLength);
+    
+    // Mostrar resultado final
     document.getElementById('textCipher').value = base64Result;
     document.getElementById('btnCopyResult').style.display = 'inline-flex';
     
-    log(`¡Texto cifrado exitosamente con AES-${mode}!`, 'success');
+    log(`¡Texto cifrado exitosamente con AES-${mode}! Revisa el proceso detallado arriba.`, 'success');
     hideLoading();
   } catch(e) {
     console.error(e);
@@ -1143,5 +1218,113 @@ function updateDemoStatus(message) {
   if (statusEl) {
     statusEl.textContent = message;
     statusEl.style.display = message ? 'block' : 'none';
+  }
+}
+
+// ===== PROCESO DETALLADO DE CIFRADO =====
+
+// Mostrar el proceso paso a paso
+function showEncryptionProcess() {
+  const processSection = document.getElementById('processDetails');
+  if (processSection) {
+    processSection.style.display = 'block';
+    processSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+}
+
+// Actualizar paso 1: Salt
+function updateStep1(saltBytes) {
+  const saltHex = Array.from(saltBytes).map(b => b.toString(16).padStart(2, '0')).join('');
+  document.getElementById('saltValue').textContent = `Salt (16 bytes): ${saltHex}`;
+}
+
+// Actualizar paso 2: Derivación de clave
+function updateStep2(password, saltBytes, derivedKey) {
+  document.getElementById('passwordInfo').textContent = password.length > 20 ? password.substring(0, 20) + '...' : password;
+  const saltHex = Array.from(saltBytes).map(b => b.toString(16).padStart(2, '0')).join('');
+  document.getElementById('saltInfo').textContent = saltHex.substring(0, 32) + '...';
+  
+  // Mostrar clave derivada (solo una parte por seguridad)
+  crypto.subtle.exportKey('raw', derivedKey).then(keyBuffer => {
+    const keyBytes = new Uint8Array(keyBuffer);
+    const keyHex = Array.from(keyBytes).map(b => b.toString(16).padStart(2, '0')).join('');
+    document.getElementById('keyValue').textContent = `Clave AES-256: ${keyHex.substring(0, 32)}... (256 bits total)`;
+  }).catch(() => {
+    document.getElementById('keyValue').textContent = 'Clave AES-256: [Clave derivada exitosamente - 256 bits]';
+  });
+}
+
+// Actualizar paso 3: IV/Nonce
+function updateStep3(ivBytes, mode) {
+  const ivHex = Array.from(ivBytes).map(b => b.toString(16).padStart(2, '0')).join('');
+  document.getElementById('ivValue').textContent = `${mode} IV: ${ivHex}`;
+  
+  const descriptions = {
+    'GCM': 'Vector de inicialización (nonce) de 12 bytes para AES-GCM',
+    'CBC': 'Vector de inicialización de 16 bytes para AES-CBC',
+    'ECB': 'ECB no utiliza IV (una de sus debilidades de seguridad)'
+  };
+  
+  const purposes = {
+    'GCM': 'Garantizar unicidad y prevenir ataques de repetición',
+    'CBC': 'Encadenar bloques y añadir aleatoriedad al cifrado',
+    'ECB': 'N/A - ECB no usa IV'
+  };
+  
+  const lengths = {
+    'GCM': '12 bytes (96 bits)',
+    'CBC': '16 bytes (128 bits)',
+    'ECB': 'N/A'
+  };
+  
+  document.getElementById('ivDescription').textContent = descriptions[mode] || descriptions['GCM'];
+  document.getElementById('ivLength').textContent = lengths[mode] || lengths['GCM'];
+  document.getElementById('ivPurpose').textContent = purposes[mode] || purposes['GCM'];
+}
+
+// Actualizar paso 4: Cifrado
+function updateStep4(plainText, mode, cipherBytes) {
+  const cipherHex = Array.from(cipherBytes.slice(0, 32)).map(b => b.toString(16).padStart(2, '0')).join('');
+  document.getElementById('cipherValue').textContent = `Datos cifrados: ${cipherHex}... (${cipherBytes.length} bytes total)`;
+  
+  document.getElementById('algorithmInfo').textContent = 'AES (Advanced Encryption Standard)';
+  document.getElementById('modeInfo').textContent = `${mode} (${getModeDescription(mode)})`;
+  document.getElementById('originalTextInfo').textContent = plainText.length > 50 ? plainText.substring(0, 50) + '...' : plainText;
+  document.getElementById('inputBytesInfo').textContent = `${new TextEncoder().encode(plainText).length} bytes`;
+}
+
+// Actualizar paso 5: Formato final
+function updateStep5(finalBase64, mode, totalSize) {
+  const preview = finalBase64.length > 100 ? finalBase64.substring(0, 100) + '...' : finalBase64;
+  document.getElementById('finalValue').textContent = `Base64: ${preview}`;
+  
+  const structures = {
+    'GCM': 'Salt (16 bytes) + IV (12 bytes) + Datos cifrados + Tag de autenticación',
+    'CBC': 'Salt (16 bytes) + IV (16 bytes) + Datos cifrados con padding',
+    'ECB': 'Salt (16 bytes) + Datos cifrados con padding'
+  };
+  
+  document.getElementById('structureInfo').textContent = structures[mode] || structures['GCM'];
+  document.getElementById('totalSizeInfo').textContent = `${totalSize} bytes (${finalBase64.length} caracteres Base64)`;
+}
+
+// Obtener descripción del modo
+function getModeDescription(mode) {
+  const descriptions = {
+    'GCM': 'Galois/Counter Mode - Cifrado autenticado',
+    'CBC': 'Cipher Block Chaining - Cifrado por bloques encadenados',
+    'ECB': 'Electronic Code Book - Cifrado por bloques independientes'
+  };
+  return descriptions[mode] || descriptions['GCM'];
+}
+
+// Animar los pasos
+function animateStep(stepNumber) {
+  const step = document.getElementById(`step${stepNumber}`);
+  if (step) {
+    step.classList.add('step-active');
+    setTimeout(() => {
+      step.classList.remove('step-active');
+    }, 1500);
   }
 }
