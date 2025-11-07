@@ -271,16 +271,22 @@ body {
 .mode-card.safe {
   background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
   border: 2px solid #10b981;
+  color: #065f46;
+  text-shadow: 0 1px 2px rgba(255,255,255,0.8);
 }
 
 .mode-card.educational {
   background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
   border: 2px solid #f59e0b;
+  color: #92400e;
+  text-shadow: 0 1px 2px rgba(255,255,255,0.8);
 }
 
 .mode-card.dangerous {
   background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
   border: 2px solid #ef4444;
+  color: #991b1b;
+  text-shadow: 0 1px 2px rgba(255,255,255,0.8);
 }
 
 .mode-header {
@@ -295,22 +301,37 @@ body {
 }
 
 .mode-card.safe .mode-header i {
-  color: #10b981;
+  color: #059669;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.1);
 }
 
 .mode-card.educational .mode-header i {
-  color: #f59e0b;
+  color: #d97706;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.1);
 }
 
 .mode-card.dangerous .mode-header i {
-  color: #ef4444;
+  color: #dc2626;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.1);
 }
 
 .mode-header h4 {
   margin: 0;
   font-size: 1.2rem;
-  color: var(--text-primary);
+  font-weight: 700;
   flex: 1;
+}
+
+.mode-card.safe .mode-header h4 {
+  color: #065f46;
+}
+
+.mode-card.educational .mode-header h4 {
+  color: #92400e;
+}
+
+.mode-card.dangerous .mode-header h4 {
+  color: #991b1b;
 }
 
 .badge {
@@ -322,18 +343,24 @@ body {
 }
 
 .badge.safe {
-  background: #10b981;
+  background: #059669;
   color: white;
+  text-shadow: none;
+  box-shadow: 0 2px 4px rgba(5, 150, 105, 0.3);
 }
 
 .badge.educational {
-  background: #f59e0b;
+  background: #d97706;
   color: white;
+  text-shadow: none;
+  box-shadow: 0 2px 4px rgba(217, 119, 6, 0.3);
 }
 
 .badge.dangerous {
-  background: #ef4444;
+  background: #dc2626;
   color: white;
+  text-shadow: none;
+  box-shadow: 0 2px 4px rgba(220, 38, 38, 0.3);
 }
 
 .mode-card ul {
@@ -343,9 +370,22 @@ body {
 }
 
 .mode-card li {
-  padding: 5px 0;
-  color: var(--text-primary);
-  font-size: 0.9rem;
+  padding: 8px 0;
+  font-size: 0.95rem;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.mode-card.safe li {
+  color: #065f46;
+}
+
+.mode-card.educational li {
+  color: #92400e;
+}
+
+.mode-card.dangerous li {
+  color: #991b1b;
 }
 
 /* === FORMULARIOS === */
